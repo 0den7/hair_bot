@@ -4,7 +4,7 @@
 Предоставляет функции для бота и веб-календаря.
 """
 
-from datetime import datetime, timedelta
+from datetime import date, datetime, timedelta
 
 from sqlalchemy import select
 
@@ -23,6 +23,40 @@ async def get_active_services():
             select(Service).where(Service.is_active)
         )
         return result.scalars().all()
+
+
+async def get_available_dates():
+    """
+    Берёт ближайшие 14 дней, исключая выходные и возвращает список словарей с
+    доступными датами.
+    """
+    async with async_session() as session:
+        result = await session.execute(
+            select(WorkingHours).where(WorkingHours.is_working)
+        )
+        working_days = {wh.day_of_week for wh in result.scalars().all()}
+
+    dates = []
+    today = date.today()
+
+    for i in range(14):
+        check_date = today + timedelta(days=i)
+        if check_date.weekday() in working_days:
+            dates.append({
+                'label': check_date.strftime('%d.%m'),
+                'value': check_date.isoformat()
+            })
+
+    return dates
+
+
+async def get_service_by_id(service_id):
+    """Возвращает услугу по ID или None, если услуги с таким ID нет."""
+    async with async_session() as session:
+        result = await session.execute(
+            select(Service).where(Service.id == service_id)
+        )
+        return result.scalars().first()
 
 
 def _is_slot_free(slot_start, slot_end, appointments, blocked_times):

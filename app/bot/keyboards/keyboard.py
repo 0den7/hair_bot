@@ -5,6 +5,20 @@
 from aiogram.types import InlineKeyboardButton, InlineKeyboardMarkup
 
 
+def get_back_button():
+    """Клавиатура с кнопкой возврата в главное меню."""
+    return InlineKeyboardMarkup(
+        inline_keyboard=[
+            [
+                InlineKeyboardButton(
+                    text='◀️ Назад',
+                    callback_data='back_to_menu'
+                )
+            ]
+        ]
+    )
+
+
 def get_main_menu():
     """Главное меню бота."""
     return InlineKeyboardMarkup(

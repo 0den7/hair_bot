@@ -55,12 +55,13 @@ async def cmd_start(message):
 
 
 @router.callback_query(F.data == 'back_to_menu')
-async def back_to_menu(callback):
+async def back_to_menu(callback, state):
     """
     Обработчик кнопки "Назад (в главное меню)".
 
-    Возвращает пользователя в главное меню.
+    Сбрасывает состояние FSM и возвращает пользователя в главное меню.
     """
+    await state.clear()
     await callback.message.edit_text(
         'Выберите действие:',
         reply_markup=get_main_menu()
