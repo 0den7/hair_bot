@@ -1,5 +1,5 @@
 """
-Обработчики: /start и кнопка "Назад (в главное меню)".
+Обработчики: /start и кнопка 'Назад (в главное меню)'.
 """
 
 from aiogram import Router, F
@@ -57,7 +57,7 @@ async def cmd_start(message):
 @router.callback_query(F.data == 'back_to_menu')
 async def back_to_menu(callback, state):
     """
-    Обработчик кнопки "Назад (в главное меню)".
+    Обработчик кнопки 'Назад (в главное меню)'.
 
     Сбрасывает состояние FSM и возвращает пользователя в главное меню.
     """
@@ -66,4 +66,4 @@ async def back_to_menu(callback, state):
         'Выберите действие:',
         reply_markup=get_main_menu()
     )
-    await callback.answer('Вы вернулись в главное меню')
+    await callback.answer()

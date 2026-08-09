@@ -177,7 +177,7 @@ async def confirm_process(callback, state):
     """
     Обработчик подтверждения записи.
 
-    Создаёт запись в БД. Если слот занят - предлагает выбрать другое время.
+    Создаёт запись в БД. Если слот занят, то предлагает выбрать другое время.
     """
     data = await state.get_data()
     telegram_id = callback.from_user.id

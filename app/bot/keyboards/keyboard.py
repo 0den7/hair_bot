@@ -123,7 +123,7 @@ def get_slots_keyboard(slots):
 
 
 def get_appointments_keyboard(appointments):
-    """Клавиатура со списком записей клиента (для просмотра или отмены)."""
+    """Клавиатура со списком записей клиента для отмены."""
     buttons = []
     for app in appointments:
         date_str = app.date.strftime('%d.%m.%Y')
