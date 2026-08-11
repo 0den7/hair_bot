@@ -200,7 +200,8 @@ async def confirm_process(callback, state):
             f'Вы записаны!\n\n'
             f'Дата: {date_label}\n'
             f'Время: {data['time']}\n\n'
-            f'Ждём вас!'
+            f'Ждём вас!',
+            reply_markup=get_back_button()
         )
     else:
         slots = await get_available_slots(selected_date, service_id)

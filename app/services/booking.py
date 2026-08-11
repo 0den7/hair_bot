@@ -7,6 +7,7 @@
 from datetime import date, datetime, timedelta
 
 from sqlalchemy import select
+from sqlalchemy.orm import joinedload
 
 from app.database import async_session
 from app.models import Client, Service, Appointment, WorkingHours, BlockedTime
@@ -207,13 +208,13 @@ async def get_client_appointments(telegram_id):
             return []
 
         result = await session.execute(
-            select(Appointment).where(
+            select(Appointment).options(joinedload(Appointment.service)).where(
                 Appointment.client_id == client.id,
                 Appointment.status != 'отменена'
             ).order_by(Appointment.date, Appointment.start_time)
         )
 
-        return result.scalars().all()
+        return result.unique().scalars().all()
 
 
 async def cancel_appointment(appointment_id, telegram_id=None):
