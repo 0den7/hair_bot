@@ -258,19 +258,21 @@ async def cancel_appointment(appointment_id, telegram_id=None):
 async def get_appointments_for_period(start_date, end_date):
     """
     Возвращает все отсортированные по дате и времени записи за период,
-    кроме отменённых.
+    кроме отмененных.
     """
     async with async_session() as session:
         result = await session.execute(
-            select(Appointment)
-            .where(
+            select(Appointment).options(
+                joinedload(Appointment.client),
+                joinedload(Appointment.service)
+            ).where(
                 Appointment.date >= start_date,
                 Appointment.date <= end_date,
                 Appointment.status != 'отменена'
             ).order_by(Appointment.date, Appointment.start_time)
         )
 
-        return result.scalars().all()
+        return result.unique().scalars().all()
 
 
 async def update_appointment(appointment_id, new_date, new_start_time):
