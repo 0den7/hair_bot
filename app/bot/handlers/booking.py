@@ -141,7 +141,7 @@ async def time_process(callback, state):
 
     Сохраняет время и показывает подтверждение с деталями записи.
     """
-    time_str = callback.data.split(':')[1]
+    time_str = callback.data.split(':', 1)[1]
     await state.update_data(time=time_str)
 
     data = await state.get_data()
