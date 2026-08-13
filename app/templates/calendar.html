@@ -37,6 +37,40 @@
         weekends: false,
         height: 'auto',
         events: '/api/appointments/',
+        editable: true,
+        slotConstraint: {
+          startTime: '10:00:00',
+          endTime: '20:00:00',
+        },
+        eventConstraint: {
+          startTime: '10:00:00',
+          endTime: '20:00:00',
+        },
+        eventDrop: function (info) {
+          var appointment = info.event;
+          var newDate = appointment.start.getFullYear() + '-' +
+            String(appointment.start.getMonth() + 1).padStart(2, '0') + '-' +
+            String(appointment.start.getDate()).padStart(2, '0');
+          var newTime = String(appointment.start.getHours()).padStart(2, '0') + ':' +
+            String(appointment.start.getMinutes()).padStart(2, '0');
+          fetch('/api/appointments/' + appointment.id + '/move', {
+            method: 'PUT',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              new_date: newDate,
+              new_time: newTime,
+            }),
+          }).then(function (response) {
+            return response.json();
+          }).then(function (data) {
+            if (!data.success) {
+              alert(data.message);
+              info.revert();
+            }
+          });
+        },
       });
       calendar.render();
     });

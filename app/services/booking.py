@@ -284,12 +284,14 @@ async def update_appointment(appointment_id, new_date, new_start_time):
     """
     async with async_session() as session:
         appointment_request = await session.execute(
-            select(Appointment).where(
+            select(Appointment).options(
+                joinedload(Appointment.service)
+            ).where(
                 Appointment.id == appointment_id,
                 Appointment.status != 'отменена'
             )
         )
-        appointment = appointment_request.scalars().first()
+        appointment = appointment_request.unique().scalars().first()
         if not appointment:
             return None
 
@@ -315,6 +317,23 @@ async def update_appointment(appointment_id, new_date, new_start_time):
 
         if not _is_slot_free(
             new_start_time, new_end_time, busy_appointments, blocked_times
+        ):
+            return None
+
+        day_of_week = new_date.weekday()
+        wh_request = await session.execute(
+            select(WorkingHours).where(
+                WorkingHours.day_of_week == day_of_week,
+                WorkingHours.is_working,
+            )
+        )
+        working_hours = wh_request.scalars().first()
+        if not working_hours:
+            return None
+
+        if (
+            new_start_time < working_hours.start_time
+            or new_end_time > working_hours.end_time
         ):
             return None
 

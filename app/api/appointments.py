@@ -4,11 +4,14 @@ API для работы с записями.
 Эндпоинты для получения списка записей за период.
 """
 
-from datetime import date
+from datetime import date, time
 
-from fastapi import APIRouter, Query
+from fastapi import APIRouter, Query, Body
 
-from app.services.booking import get_appointments_for_period
+from app.services.booking import (
+    get_appointments_for_period,
+    update_appointment
+)
 
 router = APIRouter(prefix='/api/appointments', tags=['appointments'])
 
@@ -37,3 +40,28 @@ async def get_appointments(
         }
         for app in appointments
     ]
+
+
+@router.put('/{appointment_id}/move')
+async def move_appointment(
+    appointment_id: int,
+    new_date: date = Body(..., embed=True),
+    new_time: str = Body(..., embed=True)
+):
+    """Переносит запись на новую дату и время."""
+    hour, minute = map(int, new_time.split(':'))
+    new_start_time = time(hour, minute)
+
+    appointment = await update_appointment(
+        appointment_id=appointment_id,
+        new_date=new_date,
+        new_start_time=new_start_time
+    )
+
+    if not appointment:
+        return {
+            'success': False,
+            'message': 'Слот занят или запись не найдена'
+        }
+
+    return {'success': True}
