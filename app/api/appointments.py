@@ -11,7 +11,9 @@ from fastapi import APIRouter, Query, Body
 from app.services.booking import (
     get_appointments_for_period,
     update_appointment,
-    cancel_appointment
+    cancel_appointment,
+    create_blocked_time,
+    get_blocked_times_for_period
 )
 
 router = APIRouter(prefix='/api/appointments', tags=['appointments'])
@@ -22,7 +24,7 @@ async def get_appointments(
     start: date = Query(..., description='Начало периода (YYYY-MM-DD)'),
     end: date = Query(..., description='Конец периода (YYYY-MM-DD)')
 ):
-    """Возвращает список записей в формате FullCalendar."""
+    """Возвращает список записей за период в формате FullCalendar."""
     appointments = await get_appointments_for_period(start, end)
 
     return [
@@ -49,7 +51,7 @@ async def move_appointment(
     new_date: date = Body(..., embed=True),
     new_time: str = Body(..., embed=True)
 ):
-    """Переносит запись на новую дату и время."""
+    """Перенос мастером записи на новую дату и время."""
     hour, minute = map(int, new_time.split(':'))
     new_start_time = time(hour, minute)
 
@@ -80,3 +82,53 @@ async def cancel_appointment_by_master(appointment_id: int):
         }
 
     return {'success': True}
+
+
+@router.post('/blocked')
+async def block_time(
+    day: date = Body(...),
+    start_time: str = Body(...),
+    end_time: str = Body(...),
+    reason: str = Body(None)
+):
+    """Блокировка времени мастером."""
+    start_h, start_m = map(int, start_time.split(':'))
+    end_h, end_m = map(int, end_time.split(':'))
+
+    blocked = await create_blocked_time(
+        day=day,
+        start_time=time(start_h, start_m),
+        end_time=time(end_h, end_m),
+        reason=reason
+    )
+
+    if not blocked:
+        return {'success': False, 'message': 'Время уже занято'}
+
+    return {'success': True, 'id': blocked.id}
+
+
+@router.get('/blocked')
+async def get_blocked_times(
+    start: date = Query(..., description='Начало периода'),
+    end: date = Query(..., description='Конец периода')
+):
+    """Возвращает заблокированное время за период в формате FullCalendar."""
+    blocked_times = await get_blocked_times_for_period(start, end)
+
+    return [
+        {
+            'id': f'blocked_{bt.id}',
+            'title': 'Занято',
+            'start': (
+                f'{bt.date.isoformat()}'
+                f'T{bt.start_time.strftime("%H:%M")}'
+            ),
+            'end': (
+                f'{bt.date.isoformat()}'
+                f'T{bt.end_time.strftime("%H:%M")}'
+            ),
+            'color': 'gray'
+        }
+        for bt in blocked_times
+    ]

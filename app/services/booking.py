@@ -344,3 +344,59 @@ async def update_appointment(appointment_id, new_date, new_start_time):
         await session.commit()
 
         return appointment
+
+
+async def create_blocked_time(day, start_time, end_time, reason=None):
+    """
+    Создает заблокированное время с проверкой, что новый блок не
+    пересекается с записями и другими блокировками.
+
+    Возвращает объект BlockedTime или None, если время занято.
+    """
+    async with async_session() as session:
+        appointments_request = await session.execute(
+            select(Appointment).where(
+                Appointment.date == day,
+                Appointment.status != 'отменена'
+            )
+        )
+        appointments = appointments_request.scalars().all()
+
+        blocked_request = await session.execute(
+            select(BlockedTime).where(BlockedTime.date == day)
+        )
+        blocked_times = blocked_request.scalars().all()
+
+        if not _is_slot_free(
+            start_time, end_time, appointments, blocked_times
+        ):
+            return None
+
+        blocked = BlockedTime(
+            date=day,
+            start_time=start_time,
+            end_time=end_time,
+            reason=reason
+        )
+
+        session.add(blocked)
+        await session.commit()
+
+        return blocked
+
+
+async def get_blocked_times_for_period(start_date, end_date):
+    """
+    Возвращает отсортированное по дате и времени заблокированное
+    время за период.
+    """
+    async with async_session() as session:
+        result = await session.execute(
+            select(BlockedTime)
+            .where(
+                BlockedTime.date >= start_date,
+                BlockedTime.date <= end_date
+            ).order_by(BlockedTime.date, BlockedTime.start_time)
+        )
+
+        return result.scalars().all()

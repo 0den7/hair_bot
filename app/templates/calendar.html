@@ -36,7 +36,10 @@
         allDaySlot: false,
         weekends: false,
         height: 'auto',
-        events: '/api/appointments/',
+        eventSources: [
+          { url: '/api/appointments/' },
+          { url: '/api/appointments/blocked' },
+        ],
         editable: true,
         slotConstraint: {
           startTime: '10:00:00',
@@ -85,6 +88,50 @@
               }
             });
           }
+        },
+        selectable: true,
+        selectConstraint: {
+          startTime: '10:00:00',
+          endTime: '20:00:00',
+        },
+        select: function (info) {
+          var reason = prompt('Причина блокировки (необязательно):');
+          if (reason === null) {
+            calendar.unselect();
+            return;
+          }
+          var day = info.start.getFullYear() + '-' +
+            String(info.start.getMonth() + 1).padStart(2, '0') + '-' +
+            String(info.start.getDate()).padStart(2, '0');
+          var startTime = String(info.start.getHours()).padStart(2, '0') + ':' +
+            String(info.start.getMinutes()).padStart(2, '0');
+          var endTime = String(info.end.getHours()).padStart(2, '0') + ':' +
+            String(info.end.getMinutes()).padStart(2, '0');
+          fetch('/api/appointments/blocked', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({
+              day: day,
+              start_time: startTime,
+              end_time: endTime,
+              reason: reason,
+            }),
+          }).then(function (response) {
+            return response.json();
+          }).then(function (data) {
+            if (data.success) {
+              calendar.addEvent({
+                id: 'blocked_' + data.id,
+                title: 'Занято',
+                start: info.startStr,
+                end: info.endStr,
+                color: 'gray',
+              });
+            } else {
+              alert(data.message);
+              calendar.unselect();
+            }
+          });
         },
       });
       calendar.render();
