@@ -51,6 +51,10 @@
         },
         eventDrop: function (info) {
           var appointment = info.event;
+          if (appointment.id.toString().startsWith('blocked_')) {
+            info.revert();
+            return;
+          }
           var newDate = appointment.start.getFullYear() + '-' +
             String(appointment.start.getMonth() + 1).padStart(2, '0') + '-' +
             String(appointment.start.getDate()).padStart(2, '0');
@@ -75,8 +79,10 @@
           });
         },
         eventClick: function (info) {
-          if (confirm('Отменить запись?')) {
-            fetch('/api/appointments/' + info.event.id, {
+          if (info.event.id.toString().startsWith('blocked_')) {
+            if (!confirm('Удалить блокировку?')) return;
+            var blockedId = info.event.id.replace('blocked_', '');
+            fetch('/api/appointments/blocked/' + blockedId, {
               method: 'DELETE',
             }).then(function (response) {
               return response.json();
@@ -87,7 +93,20 @@
                 alert(data.message);
               }
             });
+            return;
           }
+          if (!confirm('Отменить запись?')) return;
+          fetch('/api/appointments/' + info.event.id, {
+            method: 'DELETE',
+          }).then(function (response) {
+            return response.json();
+          }).then(function (data) {
+            if (data.success) {
+              info.event.remove();
+            } else {
+              alert(data.message);
+            }
+          });
         },
         selectable: true,
         selectConstraint: {

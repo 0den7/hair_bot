@@ -400,3 +400,15 @@ async def get_blocked_times_for_period(start_date, end_date):
         )
 
         return result.scalars().all()
+
+
+async def delete_blocked_time(blocked_id):
+    """Удаляет в календаре заблокированное время по ID."""
+    async with async_session() as session:
+        blocked = await session.get(BlockedTime, blocked_id)
+        if not blocked:
+            return False
+
+        await session.delete(blocked)
+        await session.commit()
+        return True

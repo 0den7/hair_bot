@@ -13,7 +13,8 @@ from app.services.booking import (
     update_appointment,
     cancel_appointment,
     create_blocked_time,
-    get_blocked_times_for_period
+    get_blocked_times_for_period,
+    delete_blocked_time
 )
 
 router = APIRouter(prefix='/api/appointments', tags=['appointments'])
@@ -132,3 +133,14 @@ async def get_blocked_times(
         }
         for bt in blocked_times
     ]
+
+
+@router.delete('/blocked/{blocked_id}')
+async def delete_blocked(blocked_id: int):
+    """Удаление блокировки мастером."""
+    success = await delete_blocked_time(blocked_id)
+
+    if not success:
+        return {'success': False, 'message': 'Блокировка не найдена'}
+
+    return {'success': True}
