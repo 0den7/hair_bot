@@ -10,7 +10,8 @@ from fastapi import APIRouter, Query, Body
 
 from app.services.booking import (
     get_appointments_for_period,
-    update_appointment
+    update_appointment,
+    cancel_appointment
 )
 
 router = APIRouter(prefix='/api/appointments', tags=['appointments'])
@@ -62,6 +63,20 @@ async def move_appointment(
         return {
             'success': False,
             'message': 'Слот занят или запись не найдена'
+        }
+
+    return {'success': True}
+
+
+@router.delete('/{appointment_id}')
+async def cancel_appointment_by_master(appointment_id: int):
+    """Отмена записи мастером."""
+    success = await cancel_appointment(appointment_id)
+
+    if not success:
+        return {
+            'success': False,
+            'message': 'Запись не найдена или уже отменена'
         }
 
     return {'success': True}

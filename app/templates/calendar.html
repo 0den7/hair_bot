@@ -71,6 +71,21 @@
             }
           });
         },
+        eventClick: function (info) {
+          if (confirm('Отменить запись?')) {
+            fetch('/api/appointments/' + info.event.id, {
+              method: 'DELETE',
+            }).then(function (response) {
+              return response.json();
+            }).then(function (data) {
+              if (data.success) {
+                info.event.remove();
+              } else {
+                alert(data.message);
+              }
+            });
+          }
+        },
       });
       calendar.render();
     });
