@@ -18,19 +18,22 @@ async def get_appointments(
     start: date = Query(..., description='Начало периода (YYYY-MM-DD)'),
     end: date = Query(..., description='Конец периода (YYYY-MM-DD)')
 ):
-    """Возвращает список записей за период."""
+    """Возвращает список записей в формате FullCalendar."""
     appointments = await get_appointments_for_period(start, end)
 
     return [
         {
             'id': app.id,
-            'date': app.date.isoformat(),
-            'start_time': app.start_time.strftime('%H:%M'),
-            'end_time': app.end_time.strftime('%H:%M'),
-            'status': app.status,
-            'client_name': app.client.first_name,
-            'service_name': app.service.name,
-            'service_duration': app.service.duration
+            'title': f'{app.client.first_name} — {app.service.name}',
+            'start': (
+                f'{app.date.isoformat()}'
+                f'T{app.start_time.strftime("%H:%M")}'
+            ),
+            'end': (
+                f'{app.date.isoformat()}'
+                f'T{app.end_time.strftime("%H:%M")}'
+            ),
+            'status': app.status
         }
         for app in appointments
     ]

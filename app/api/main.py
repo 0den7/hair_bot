@@ -5,31 +5,21 @@ FastAPI приложение для веб-календаря.
 для API.
 """
 
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
 from fastapi.responses import HTMLResponse
+from fastapi.templating import Jinja2Templates
 
 from app.api.appointments import router as appointments_router
 
 app = FastAPI(title='Календарь записей')
 app.include_router(appointments_router)
+templates = Jinja2Templates(directory='app/templates')
 
 
 @app.get('/', response_class=HTMLResponse)
-async def index():
+async def index(request: Request):
     """Главная страница с календарем."""
-    return '''
-    <!DOCTYPE html>
-    <html>
-    <head>
-        <meta charset="utf-8">
-        <title>Календарь записи</title>
-    </head>
-    <body>
-        <h1>Календарь записи</h1>
-        <p>Здесь будет календарь.</p>
-    </body>
-    </html>
-    '''
+    return templates.TemplateResponse(request, 'calendar.html')
 
 
 @app.get('/health')
