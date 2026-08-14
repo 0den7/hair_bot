@@ -33,7 +33,7 @@ class Client(Base):
     __tablename__ = 'clients'
 
     id = Column(Integer, primary_key=True, index=True)
-    telegram_id = Column(BigInteger, unique=True, nullable=False)
+    telegram_id = Column(BigInteger, unique=True, nullable=True)
     username = Column(String(255), nullable=True)
     first_name = Column(String(255), nullable=False)
     last_name = Column(String(255), nullable=True)
