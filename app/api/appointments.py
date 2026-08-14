@@ -14,7 +14,8 @@ from app.services.booking import (
     cancel_appointment,
     create_blocked_time,
     get_blocked_times_for_period,
-    delete_blocked_time
+    delete_blocked_time,
+    create_appointment_by_master
 )
 
 router = APIRouter(prefix='/api/appointments', tags=['appointments'])
@@ -144,3 +145,28 @@ async def delete_blocked(blocked_id: int):
         return {'success': False, 'message': 'Блокировка не найдена'}
 
     return {'success': True}
+
+
+@router.post('/create')
+async def create_appointment(
+    client_name: str = Body(...),
+    service_id: int = Body(...),
+    day: date = Body(...),
+    start_time: str = Body(...)
+):
+    """Создание записи мастером."""
+    start_h, start_m = map(int, start_time.split(':'))
+    appointment = await create_appointment_by_master(
+        client_name=client_name,
+        service_id=service_id,
+        day=day,
+        start_time=time(start_h, start_m)
+    )
+
+    if not appointment:
+        return {
+            'success': False,
+            'message': 'Услуга не найдена или слот занят'
+        }
+
+    return {'success': True, 'id': appointment.id}

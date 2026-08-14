@@ -198,7 +198,13 @@ async def create_appointment(telegram_id, service_id, day, start_time):
 
 
 async def get_client_appointments(telegram_id):
-    """Возвращает список активных записей клиента."""
+    """
+    Возвращает список активных записей клиента или пустой список,
+    если telegram_id == None.
+    """
+    if telegram_id is None:
+        return []
+
     async with async_session() as session:
         client_request = await session.execute(
             select(Client).where(Client.telegram_id == telegram_id)
@@ -412,3 +418,66 @@ async def delete_blocked_time(blocked_id):
         await session.delete(blocked)
         await session.commit()
         return True
+
+
+async def create_appointment_by_master(
+    client_name,
+    service_id,
+    day,
+    start_time
+):
+    """
+    Создание записи мастером.
+
+    Возвращает объект Appointment или None, если услуга не найдена или
+    слот занят.
+    """
+    async with async_session() as session:
+        client = Client(
+            telegram_id=None,
+            first_name=client_name
+        )
+        session.add(client)
+        await session.flush()
+
+        service_result = await session.execute(
+            select(Service).where(Service.id == service_id)
+        )
+        service = service_result.scalars().first()
+        if not service:
+            return None
+
+        start_dt = datetime.combine(day, start_time)
+        end_dt = start_dt + timedelta(minutes=service.duration)
+        end_time = end_dt.time()
+
+        busy_request = await session.execute(
+            select(Appointment).where(
+                Appointment.date == day,
+                Appointment.status != 'отменена'
+            )
+        )
+        busy_appointments = busy_request.scalars().all()
+
+        blocked_request = await session.execute(
+            select(BlockedTime).where(BlockedTime.date == day)
+        )
+        blocked_times = blocked_request.scalars().all()
+
+        if not _is_slot_free(
+            start_time, end_time, busy_appointments, blocked_times
+        ):
+            return None
+
+        appointment = Appointment(
+            client_id=client.id,
+            service_id=service.id,
+            date=day,
+            start_time=start_time,
+            end_time=end_time,
+            status='в ожидании'
+        )
+        session.add(appointment)
+        await session.commit()
+
+        return appointment

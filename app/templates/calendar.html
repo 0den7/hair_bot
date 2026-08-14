@@ -20,8 +20,85 @@
   <div id="calendar"></div>
 
   <script>
+    var calendar;
+    function createAppointment(info) {
+      var clientName = prompt('Имя клиента:');
+      if (!clientName) {
+        calendar.unselect();
+        return;
+      }
+      var serviceId = prompt(
+        'Выберите услугу:\n' +
+        '1 - Стрижка\n' +
+        '2 - Окрашивание\n' +
+        '3 - Стрижка + Окрашивание'
+      );
+      if (!serviceId) {
+        calendar.unselect();
+        return;
+      }
+      var day = info.start.getFullYear() + '-' +
+        String(info.start.getMonth() + 1).padStart(2, '0') + '-' +
+        String(info.start.getDate()).padStart(2, '0');
+      var startTime = String(info.start.getHours()).padStart(2, '0') + ':' +
+        String(info.start.getMinutes()).padStart(2, '0');
+      fetch('/api/appointments/create', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({
+          client_name: clientName,
+          service_id: parseInt(serviceId),
+          day: day,
+          start_time: startTime,
+        }),
+      }).then(function (response) {
+        return response.json();
+      }).then(function (data) {
+        if (data.success) {
+          calendar.refetchEvents();
+          calendar.unselect();
+        } else {
+          alert(data.message);
+          calendar.unselect();
+        }
+      });
+    }
+    function createBlock(info) {
+      var reason = prompt('Причина блокировки (необязательно):');
+      if (reason === null) {
+        calendar.unselect();
+        return;
+      }
+      var day = info.start.getFullYear() + '-' +
+        String(info.start.getMonth() + 1).padStart(2, '0') + '-' +
+        String(info.start.getDate()).padStart(2, '0');
+      var startTime = String(info.start.getHours()).padStart(2, '0') + ':' +
+        String(info.start.getMinutes()).padStart(2, '0');
+      var endTime = String(info.end.getHours()).padStart(2, '0') + ':' +
+        String(info.end.getMinutes()).padStart(2, '0');
+      fetch('/api/appointments/blocked', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({
+          day: day,
+          start_time: startTime,
+          end_time: endTime,
+          reason: reason,
+        }),
+      }).then(function (response) {
+        return response.json();
+      }).then(function (data) {
+        if (data.success) {
+          calendar.refetchEvents();
+          calendar.unselect();
+        } else {
+          alert(data.message);
+          calendar.unselect();
+        }
+      });
+    }
     document.addEventListener('DOMContentLoaded', function () {
-      var calendar = new FullCalendar.Calendar(document.getElementById('calendar'), {
+      calendar = new FullCalendar.Calendar(document.getElementById('calendar'), {
         initialView: 'timeGridWeek',
         headerToolbar: {
           left: 'prev,next today',
@@ -114,43 +191,21 @@
           endTime: '20:00:00',
         },
         select: function (info) {
-          var reason = prompt('Причина блокировки (необязательно):');
-          if (reason === null) {
+          var action = prompt('Что создать?\n1 - Запись\n2 - Блокировка');
+          if (action === null) {
             calendar.unselect();
             return;
           }
-          var day = info.start.getFullYear() + '-' +
-            String(info.start.getMonth() + 1).padStart(2, '0') + '-' +
-            String(info.start.getDate()).padStart(2, '0');
-          var startTime = String(info.start.getHours()).padStart(2, '0') + ':' +
-            String(info.start.getMinutes()).padStart(2, '0');
-          var endTime = String(info.end.getHours()).padStart(2, '0') + ':' +
-            String(info.end.getMinutes()).padStart(2, '0');
-          fetch('/api/appointments/blocked', {
-            method: 'POST',
-            headers: {'Content-Type': 'application/json'},
-            body: JSON.stringify({
-              day: day,
-              start_time: startTime,
-              end_time: endTime,
-              reason: reason,
-            }),
-          }).then(function (response) {
-            return response.json();
-          }).then(function (data) {
-            if (data.success) {
-              calendar.addEvent({
-                id: 'blocked_' + data.id,
-                title: 'Занято',
-                start: info.startStr,
-                end: info.endStr,
-                color: 'gray',
-              });
-            } else {
-              alert(data.message);
-              calendar.unselect();
-            }
-          });
+          if (action === '1') {
+            createAppointment(info);
+            return;
+          }
+          if (action === '2') {
+            createBlock(info);
+            return;
+          }
+          calendar.unselect();
+          alert('Введите 1 или 2');
         },
       });
       calendar.render();
