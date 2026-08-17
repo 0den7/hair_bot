@@ -17,7 +17,20 @@
 </head>
 <body>
   <h1>Календарь записи</h1>
+  <button onclick="openServices()">Услуги</button>
   <div id="calendar"></div>
+
+  <div id="servicesModal" style="display:none; position:fixed; top:50%; left:50%; transform:translate(-50%,-50%); background:white; padding:20px; border:1px solid gray; z-index:1000;">
+    <h3>Услуги</h3>
+    <div id="servicesList"></div>
+    <h4>Добавить услугу</h4>
+    <input type="text" id="newName" placeholder="Название">
+    <input type="number" id="newDuration" placeholder="Минуты">
+    <input type="number" id="newPrice" placeholder="Цена">
+    <button onclick="addService()">Добавить</button>
+    <br><br>
+    <button onclick="closeServices()">Закрыть</button>
+  </div>
 
   <script>
     var calendar;
@@ -97,6 +110,94 @@
         }
       });
     }
+
+    function openServices() {
+      document.getElementById('servicesModal').style.display = 'block';
+      loadServices();
+    }
+
+    function closeServices() {
+      document.getElementById('servicesModal').style.display = 'none';
+    }
+
+    function loadServices() {
+      fetch('/api/services/')
+        .then(function (response) {
+          return response.json();
+        })
+        .then(function (services) {
+          var html = '<ul>';
+          services.forEach(function (service) {
+            html += '<li>' + service.name + ' — ' + service.duration +
+              ' мин, ' + service.price + '₽ (' +
+              (service.is_active ? 'активна' : 'скрыта') + ') ' +
+              '<button onclick="toggleService(' + service.id + ')">Переключить</button> ' +
+              '<button onclick="deleteService(' + service.id + ')">Удалить</button></li>';
+          });
+          html += '</ul>';
+          document.getElementById('servicesList').innerHTML = html;
+        });
+    }
+
+    function addService() {
+      var name = document.getElementById('newName').value;
+      var duration = parseInt(document.getElementById('newDuration').value);
+      var price = parseInt(document.getElementById('newPrice').value);
+
+      fetch('/api/services/', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({
+          name: name,
+          duration: duration,
+          price: price,
+        }),
+      }).then(function (response) {
+        return response.json();
+      }).then(function (data) {
+        if (data.success) {
+          loadServices();
+          document.getElementById('newName').value = '';
+          document.getElementById('newDuration').value = '';
+          document.getElementById('newPrice').value = '';
+        } else {
+          alert(data.message);
+        }
+      });
+    }
+
+    function toggleService(id) {
+      fetch('/api/services/' + id + '/toggle', {
+        method: 'POST',
+      }).then(function (response) {
+        return response.json();
+      }).then(function (data) {
+        if (data.success) {
+          loadServices();
+          calendar.refetchEvents();
+        } else {
+          alert(data.message);
+        }
+      });
+    }
+
+    function deleteService(id) {
+      if (!confirm('Удалить услугу?')) return;
+
+      fetch('/api/services/' + id, {
+        method: 'DELETE',
+      }).then(function (response) {
+        return response.json();
+      }).then(function (data) {
+        if (data.success) {
+          loadServices();
+          calendar.refetchEvents();
+        } else {
+          alert(data.message);
+        }
+      });
+    }
+
     document.addEventListener('DOMContentLoaded', function () {
       calendar = new FullCalendar.Calendar(document.getElementById('calendar'), {
         initialView: 'timeGridWeek',

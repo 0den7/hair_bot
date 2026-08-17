@@ -481,3 +481,109 @@ async def create_appointment_by_master(
         await session.commit()
 
         return appointment
+
+
+async def get_all_services():
+    """
+    Возвращает список всех услуг (включая неактивные).
+
+    Используется в календаре для управления услугами.
+    """
+    async with async_session() as session:
+        result = await session.execute(
+            select(Service).order_by(Service.name)
+        )
+        return result.scalars().all()
+
+
+async def create_service(name, duration, price, description=None):
+    """
+    Создает новую услугу.
+
+    Возвращает объект Service или None, если услуга с таким именем уже есть.
+    """
+    async with async_session() as session:
+        existing = await session.execute(
+            select(Service).where(Service.name == name)
+        )
+        if existing.scalars().first():
+            return None
+
+        service = Service(
+            name=name,
+            duration=duration,
+            price=price,
+            description=description
+        )
+        session.add(service)
+        await session.commit()
+        return service
+
+
+async def update_service(
+    service_id,
+    name=None,
+    duration=None,
+    price=None,
+    description=None
+):
+    """
+    Обновляет поля услуги.
+
+    Возвращает объект Service или None, если услуга не найдена.
+    """
+    async with async_session() as session:
+        service = await session.get(Service, service_id)
+        if not service:
+            return None
+
+        if name is not None:
+            service.name = name
+        if duration is not None:
+            service.duration = duration
+        if price is not None:
+            service.price = price
+        if description is not None:
+            service.description = description
+
+        await session.commit()
+        return service
+
+
+async def toggle_service_active(service_id):
+    """
+    Переключает активность услуги.
+
+    Возвращает объект Service или None, если услуга не найдена.
+    """
+    async with async_session() as session:
+        service = await session.get(Service, service_id)
+        if not service:
+            return None
+
+        service.is_active = not service.is_active
+        await session.commit()
+        return service
+
+
+async def delete_service(service_id):
+    """
+    Удаляет услугу.
+
+    Возвращает True — если услуга удалена, False — если не найдена или
+    на нее есть записи.
+    """
+    async with async_session() as session:
+        service = await session.get(Service, service_id)
+        if not service:
+            return False
+
+        appointments_request = await session.execute(
+            select(Appointment).where(Appointment.service_id == service_id)
+        )
+        if appointments_request.scalars().first():
+            return False
+
+        await session.delete(service)
+        await session.commit()
+        return True
