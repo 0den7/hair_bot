@@ -587,3 +587,42 @@ async def delete_service(service_id):
         await session.delete(service)
         await session.commit()
         return True
+
+
+async def get_working_hours():
+    """Возвращает список настроек рабочего времени на все дни недели."""
+    async with async_session() as session:
+        result = await session.execute(
+            select(WorkingHours).order_by(WorkingHours.day_of_week)
+        )
+        return result.scalars().all()
+
+
+async def update_working_hours(
+    day_of_week,
+    start_time=None,
+    end_time=None,
+    is_working=None
+):
+    """
+    Обновляет рабочее время для дня недели.
+
+    Возвращает объект WorkingHours или None, если день не найден.
+    """
+    async with async_session() as session:
+        result = await session.execute(
+            select(WorkingHours).where(WorkingHours.day_of_week == day_of_week)
+        )
+        working_hours = result.scalars().first()
+        if not working_hours:
+            return None
+
+        if start_time is not None:
+            working_hours.start_time = start_time
+        if end_time is not None:
+            working_hours.end_time = end_time
+        if is_working is not None:
+            working_hours.is_working = is_working
+
+        await session.commit()
+        return working_hours

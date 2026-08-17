@@ -18,6 +18,7 @@
 <body>
   <h1>Календарь записи</h1>
   <button onclick="openServices()">Услуги</button>
+  <button onclick="openWorkingHours()">Рабочее время</button>
   <div id="calendar"></div>
 
   <div id="servicesModal" style="display:none; position:fixed; top:50%; left:50%; transform:translate(-50%,-50%); background:white; padding:20px; border:1px solid gray; z-index:1000;">
@@ -44,6 +45,13 @@
     <br><br>
     <button onclick="saveEdit()">Сохранить</button>
     <button onclick="closeEdit()">Отмена</button>
+  </div>
+
+  <div id="workingHoursModal" style="display:none; position:fixed; top:50%; left:50%; transform:translate(-50%,-50%); background:white; padding:20px; border:1px solid gray; z-index:1002;">
+    <h3>Рабочее время</h3>
+    <div id="workingHoursList"></div>
+    <br>
+    <button onclick="closeWorkingHours()">Закрыть</button>
   </div>
 
   <script>
@@ -248,6 +256,59 @@
 
     function closeEdit() {
       document.getElementById('editModal').style.display = 'none';
+    }
+
+    function openWorkingHours() {
+      document.getElementById('workingHoursModal').style.display = 'block';
+      loadWorkingHours();
+    }
+
+    function closeWorkingHours() {
+      document.getElementById('workingHoursModal').style.display = 'none';
+    }
+
+    function loadWorkingHours() {
+      fetch('/api/working-hours/')
+        .then(function (response) {
+          return response.json();
+        })
+        .then(function (days) {
+          var html = '<ul>';
+          days.forEach(function (day) {
+            html += '<li>' + day.label + ': ' +
+              day.start_time + ' - ' + day.end_time + ' (' +
+              (day.is_working ? 'рабочий' : 'выходной') + ') ' +
+              '<button onclick="editWorkingHours(' + day.day_of_week + ', \'' + day.start_time + '\', \'' + day.end_time + '\', ' + day.is_working + ')">Изменить</button></li>';
+          });
+          html += '</ul>';
+          document.getElementById('workingHoursList').innerHTML = html;
+        });
+    }
+
+    function editWorkingHours(dayOfWeek, currentStart, currentEnd, currentIsWorking) {
+      var newStart = prompt('Начало (ЧЧ:ММ):', currentStart);
+      if (newStart === null) return;
+      var newEnd = prompt('Конец (ЧЧ:ММ):', currentEnd);
+      if (newEnd === null) return;
+      var isWorking = confirm('Сделать день рабочим? Нажмите Да — рабочий, Нет — выходной.');
+      fetch('/api/working-hours/' + dayOfWeek, {
+        method: 'PUT',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({
+          start_time: newStart,
+          end_time: newEnd,
+          is_working: isWorking,
+        }),
+      }).then(function (response) {
+        return response.json();
+      }).then(function (data) {
+        if (data.success) {
+          loadWorkingHours();
+          calendar.refetchEvents();
+        } else {
+          alert(data.message);
+        }
+      });
     }
 
     document.addEventListener('DOMContentLoaded', function () {

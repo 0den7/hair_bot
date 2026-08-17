@@ -12,11 +12,13 @@ from fastapi.templating import Jinja2Templates
 from app.api.appointments import router as appointments_router
 from app.api.auth import is_authorized, router as auth_router
 from app.api.services import router as services_router
+from app.api.working_hours import router as working_hours_router
 
 app = FastAPI(title='Календарь записей')
 app.include_router(appointments_router)
 app.include_router(auth_router)
 app.include_router(services_router)
+app.include_router(working_hours_router)
 templates = Jinja2Templates(directory='app/templates')
 
 
