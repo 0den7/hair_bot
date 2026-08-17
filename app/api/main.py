@@ -6,19 +6,34 @@ FastAPI приложение для веб-календаря.
 """
 
 from fastapi import FastAPI, Request
-from fastapi.responses import HTMLResponse
+from fastapi.responses import HTMLResponse, JSONResponse, RedirectResponse
 from fastapi.templating import Jinja2Templates
 
 from app.api.appointments import router as appointments_router
+from app.api.auth import is_authorized, router as auth_router
 
 app = FastAPI(title='Календарь записей')
 app.include_router(appointments_router)
+app.include_router(auth_router)
 templates = Jinja2Templates(directory='app/templates')
+
+
+@app.middleware('http')
+async def check_auth(request: Request, call_next):
+    """Защищает /api/ от неавторизованного доступа."""
+    if request.url.path.startswith('/api/') and not is_authorized(request):
+        return JSONResponse(
+            status_code=401,
+            content={'detail': 'Требуется авторизация'}
+        )
+    return await call_next(request)
 
 
 @app.get('/', response_class=HTMLResponse)
 async def index(request: Request):
-    """Главная страница с календарем."""
+    """Главная страница с календарем (только для авторизованных)."""
+    if not is_authorized(request):
+        return RedirectResponse('/login', status_code=303)
     return templates.TemplateResponse(request, 'calendar.html')
 
 
