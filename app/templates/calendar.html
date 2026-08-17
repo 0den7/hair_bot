@@ -304,76 +304,116 @@
       }).then(function (data) {
         if (data.success) {
           loadWorkingHours();
-          calendar.refetchEvents();
+          location.reload();
         } else {
           alert(data.message);
         }
       });
     }
 
-    document.addEventListener('DOMContentLoaded', function () {
-      calendar = new FullCalendar.Calendar(document.getElementById('calendar'), {
-        initialView: 'timeGridWeek',
-        headerToolbar: {
-          left: 'prev,next today',
-          center: 'title',
-          right: 'dayGridMonth,timeGridWeek'
-        },
-        locale: 'ru',
-        firstDay: 1,
-        slotMinTime: '10:00:00',
-        slotMaxTime: '20:00:00',
-        slotDuration: '00:30:00',
-        allDaySlot: false,
-        weekends: false,
-        height: 'auto',
-        eventSources: [
-          { url: '/api/appointments/' },
-          { url: '/api/appointments/blocked' },
-        ],
-        editable: true,
-        slotConstraint: {
-          startTime: '10:00:00',
-          endTime: '20:00:00',
-        },
-        eventConstraint: {
-          startTime: '10:00:00',
-          endTime: '20:00:00',
-        },
-        eventDrop: function (info) {
-          var appointment = info.event;
-          if (appointment.id.toString().startsWith('blocked_')) {
-            info.revert();
-            return;
-          }
-          var newDate = appointment.start.getFullYear() + '-' +
-            String(appointment.start.getMonth() + 1).padStart(2, '0') + '-' +
-            String(appointment.start.getDate()).padStart(2, '0');
-          var newTime = String(appointment.start.getHours()).padStart(2, '0') + ':' +
-            String(appointment.start.getMinutes()).padStart(2, '0');
-          fetch('/api/appointments/' + appointment.id + '/move', {
-            method: 'PUT',
-            headers: {
-              'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-              new_date: newDate,
-              new_time: newTime,
-            }),
-          }).then(function (response) {
-            return response.json();
-          }).then(function (data) {
-            if (!data.success) {
-              alert(data.message);
-              info.revert();
-            }
+    function fetchWorkingHoursBounds() {
+      return fetch('/api/working-hours/')
+        .then(function (response) {
+          return response.json();
+        })
+        .then(function (days) {
+          var workingDays = days.filter(function (day) {
+            return day.is_working;
           });
-        },
-        eventClick: function (info) {
-          if (info.event.id.toString().startsWith('blocked_')) {
-            if (!confirm('Удалить блокировку?')) return;
-            var blockedId = info.event.id.replace('blocked_', '');
-            fetch('/api/appointments/blocked/' + blockedId, {
+          if (workingDays.length === 0) {
+            return { minTime: '10:00:00', maxTime: '20:00:00' };
+          }
+          var minTime = workingDays[0].start_time;
+          var maxTime = workingDays[0].end_time;
+          workingDays.forEach(function (day) {
+            if (day.start_time < minTime) minTime = day.start_time;
+            if (day.end_time > maxTime) maxTime = day.end_time;
+          });
+          return {
+            minTime: minTime + ':00',
+            maxTime: maxTime + ':00',
+          };
+        });
+    }
+
+    document.addEventListener('DOMContentLoaded', function () {
+      fetchWorkingHoursBounds().then(function (bounds) {
+        calendar = new FullCalendar.Calendar(document.getElementById('calendar'), {
+          initialView: 'timeGridWeek',
+          headerToolbar: {
+            left: 'prev,next today',
+            center: 'title',
+            right: 'dayGridMonth,timeGridWeek'
+          },
+          locale: 'ru',
+          firstDay: 1,
+          slotMinTime: bounds.minTime,
+          slotMaxTime: bounds.maxTime,
+          slotDuration: '00:30:00',
+          allDaySlot: false,
+          weekends: false,
+          height: 'auto',
+          eventSources: [
+            { url: '/api/appointments/' },
+            { url: '/api/appointments/blocked' },
+          ],
+          editable: true,
+          slotConstraint: {
+            startTime: bounds.minTime,
+            endTime: bounds.maxTime,
+          },
+          eventConstraint: {
+            startTime: bounds.minTime,
+            endTime: bounds.maxTime,
+          },
+          eventDrop: function (info) {
+            var appointment = info.event;
+            if (appointment.id.toString().startsWith('blocked_')) {
+              info.revert();
+              return;
+            }
+            var newDate = appointment.start.getFullYear() + '-' +
+              String(appointment.start.getMonth() + 1).padStart(2, '0') + '-' +
+              String(appointment.start.getDate()).padStart(2, '0');
+            var newTime = String(appointment.start.getHours()).padStart(2, '0') + ':' +
+              String(appointment.start.getMinutes()).padStart(2, '0');
+            fetch('/api/appointments/' + appointment.id + '/move', {
+              method: 'PUT',
+              headers: {
+                'Content-Type': 'application/json',
+              },
+              body: JSON.stringify({
+                new_date: newDate,
+                new_time: newTime,
+              }),
+            }).then(function (response) {
+              return response.json();
+            }).then(function (data) {
+              if (!data.success) {
+                alert(data.message);
+                info.revert();
+              }
+            });
+          },
+          eventClick: function (info) {
+            if (info.event.id.toString().startsWith('blocked_')) {
+              if (!confirm('Удалить блокировку?')) return;
+              var blockedId = info.event.id.replace('blocked_', '');
+              fetch('/api/appointments/blocked/' + blockedId, {
+                method: 'DELETE',
+              }).then(function (response) {
+                return response.json();
+              }).then(function (data) {
+                if (data.success) {
+                  info.event.remove();
+                } else {
+                  alert(data.message);
+                }
+              });
+              return;
+            }
+            if (!confirm('Отменить запись?')) return;
+            fetch('/api/appointments/' + info.event.id, {
               method: 'DELETE',
             }).then(function (response) {
               return response.json();
@@ -384,45 +424,32 @@
                 alert(data.message);
               }
             });
-            return;
-          }
-          if (!confirm('Отменить запись?')) return;
-          fetch('/api/appointments/' + info.event.id, {
-            method: 'DELETE',
-          }).then(function (response) {
-            return response.json();
-          }).then(function (data) {
-            if (data.success) {
-              info.event.remove();
-            } else {
-              alert(data.message);
+          },
+          selectable: true,
+          selectConstraint: {
+            startTime: bounds.minTime,
+            endTime: bounds.maxTime,
+          },
+          select: function (info) {
+            var action = prompt('Что создать?\n1 - Запись\n2 - Блокировка');
+            if (action === null) {
+              calendar.unselect();
+              return;
             }
-          });
-        },
-        selectable: true,
-        selectConstraint: {
-          startTime: '10:00:00',
-          endTime: '20:00:00',
-        },
-        select: function (info) {
-          var action = prompt('Что создать?\n1 - Запись\n2 - Блокировка');
-          if (action === null) {
+            if (action === '1') {
+              createAppointment(info);
+              return;
+            }
+            if (action === '2') {
+              createBlock(info);
+              return;
+            }
             calendar.unselect();
-            return;
-          }
-          if (action === '1') {
-            createAppointment(info);
-            return;
-          }
-          if (action === '2') {
-            createBlock(info);
-            return;
-          }
-          calendar.unselect();
-          alert('Введите 1 или 2');
-        },
+            alert('Введите 1 или 2');
+          },
+        });
+        calendar.render();
       });
-      calendar.render();
     });
   </script>
 </body>
