@@ -32,6 +32,20 @@
     <button onclick="closeServices()">Закрыть</button>
   </div>
 
+  <div id="editModal" style="display:none; position:fixed; top:50%; left:50%; transform:translate(-50%,-50%); background:white; padding:20px; border:1px solid gray; z-index:1001;">
+    <h3>Изменить услугу</h3>
+    <input type="hidden" id="editId">
+    <p>Название</p>
+    <input type="text" id="editName">
+    <p>Длительность (минут)</p>
+    <input type="number" id="editDuration">
+    <p>Цена (₽)</p>
+    <input type="number" id="editPrice">
+    <br><br>
+    <button onclick="saveEdit()">Сохранить</button>
+    <button onclick="closeEdit()">Отмена</button>
+  </div>
+
   <script>
     var calendar;
     function createAppointment(info) {
@@ -131,7 +145,8 @@
             html += '<li>' + service.name + ' — ' + service.duration +
               ' мин, ' + service.price + '₽ (' +
               (service.is_active ? 'активна' : 'скрыта') + ') ' +
-              '<button onclick="toggleService(' + service.id + ')">Переключить</button> ' +
+              '<button onclick="toggleService(' + service.id + ')">Переключить статус услуги</button> ' +
+              '<button onclick="openEdit(' + service.id + ', \'' + service.name + '\', ' + service.duration + ', ' + service.price + ')">Изменить</button> ' +
               '<button onclick="deleteService(' + service.id + ')">Удалить</button></li>';
           });
           html += '</ul>';
@@ -143,7 +158,6 @@
       var name = document.getElementById('newName').value;
       var duration = parseInt(document.getElementById('newDuration').value);
       var price = parseInt(document.getElementById('newPrice').value);
-
       fetch('/api/services/', {
         method: 'POST',
         headers: {'Content-Type': 'application/json'},
@@ -196,6 +210,44 @@
           alert(data.message);
         }
       });
+    }
+
+    function openEdit(id, name, duration, price) {
+      document.getElementById('editId').value = id;
+      document.getElementById('editName').value = name;
+      document.getElementById('editDuration').value = duration;
+      document.getElementById('editPrice').value = price;
+      document.getElementById('editModal').style.display = 'block';
+    }
+
+    function saveEdit() {
+      var id = document.getElementById('editId').value;
+      var name = document.getElementById('editName').value;
+      var duration = parseInt(document.getElementById('editDuration').value);
+      var price = parseInt(document.getElementById('editPrice').value);
+      fetch('/api/services/' + id, {
+        method: 'PUT',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({
+          name: name,
+          duration: duration,
+          price: price,
+        }),
+      }).then(function (response) {
+        return response.json();
+      }).then(function (data) {
+        if (data.success) {
+          closeEdit();
+          loadServices();
+          calendar.refetchEvents();
+        } else {
+          alert(data.message);
+        }
+      });
+    }
+
+    function closeEdit() {
+      document.getElementById('editModal').style.display = 'none';
     }
 
     document.addEventListener('DOMContentLoaded', function () {
