@@ -626,3 +626,24 @@ async def update_working_hours(
 
         await session.commit()
         return working_hours
+
+
+async def get_appointments_for_today():
+    """
+    Возвращает активные записи на сегодня.
+
+    Используется для отправки напоминаний.
+    """
+    today = date.today()
+
+    async with async_session() as session:
+        result = await session.execute(
+            select(Appointment).options(
+                joinedload(Appointment.client),
+                joinedload(Appointment.service)
+            ).where(
+                Appointment.date == today,
+                Appointment.status != 'отменена'
+            )
+        )
+        return result.unique().scalars().all()

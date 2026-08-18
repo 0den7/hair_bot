@@ -11,6 +11,7 @@ from aiogram.fsm.storage.memory import MemoryStorage
 
 from app.bot.config import BOT_TOKEN
 from app.bot.handlers import start, booking, appointments
+from app.bot.reminders import send_reminders
 
 
 async def main():
@@ -21,6 +22,8 @@ async def main():
     dp.include_router(start.router)
     dp.include_router(booking.router)
     dp.include_router(appointments.router)
+
+    asyncio.create_task(send_reminders())
 
     await bot.delete_webhook(drop_pending_updates=True)
     await dp.start_polling(bot)
