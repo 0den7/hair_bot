@@ -19,6 +19,7 @@
   <h1>Календарь записи</h1>
   <button onclick="openServices()">Услуги</button>
   <button onclick="openWorkingHours()">Рабочее время</button>
+  <button onclick="exportCsv()">Скачать таблицу записей</button>
   <div id="calendar"></div>
 
   <div id="servicesModal" style="display:none; position:fixed; top:50%; left:50%; transform:translate(-50%,-50%); background:white; padding:20px; border:1px solid gray; z-index:1000;">
@@ -334,6 +335,12 @@
             maxTime: maxTime + ':00',
           };
         });
+    }
+
+    function exportCsv() {
+      var start = calendar.view.activeStart.toISOString().slice(0, 10);
+      var end = calendar.view.activeEnd.toISOString().slice(0, 10);
+      window.location.href = '/api/appointments/export?start=' + start + '&end=' + end;
     }
 
     document.addEventListener('DOMContentLoaded', function () {

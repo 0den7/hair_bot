@@ -2,9 +2,12 @@
 API для работы с записями.
 """
 
+import csv
 from datetime import date, time
+from io import StringIO
 
 from fastapi import APIRouter, Query, Body
+from fastapi.responses import StreamingResponse
 
 from app.services.booking import (
     get_appointments_for_period,
@@ -168,3 +171,37 @@ async def create_appointment(
         }
 
     return {'success': True, 'id': appointment.id}
+
+
+@router.get('/export')
+async def export_appointments(
+    start: date = Query(...),
+    end: date = Query(...)
+):
+    """Возвращает CSV-файл с записями за период."""
+    appointments = await get_appointments_for_period(start, end)
+
+    output = StringIO()
+    output.write('\ufeff')
+    writer = csv.writer(output, delimiter=';')
+    writer.writerow(['Дата', 'Время', 'Клиент', 'Услуга', 'Цена', 'Статус'])
+
+    for app in appointments:
+        writer.writerow([
+            app.date.strftime('%d.%m.%Y'),
+            app.start_time.strftime('%H:%M'),
+            app.client.first_name,
+            app.service.name,
+            app.service.price,
+            app.status
+        ])
+
+    output.seek(0)
+
+    return StreamingResponse(
+        iter([output.getvalue()]),
+        media_type='text/csv',
+        headers={
+            'Content-Disposition': 'attachment; filename=appointments.csv'
+        }
+    )
