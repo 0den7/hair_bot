@@ -170,7 +170,12 @@ async def create_appointment(
             'message': 'Услуга не найдена или слот занят'
         }
 
-    return {'success': True, 'id': appointment.id}
+    return {
+        'success': True,
+        'id': appointment.id,
+        'start_time': appointment.start_time.strftime('%H:%M'),
+        'end_time': appointment.end_time.strftime('%H:%M')
+    }
 
 
 @router.get('/export')

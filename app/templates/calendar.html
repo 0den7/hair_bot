@@ -3,6 +3,7 @@
 <head>
   <meta charset="utf-8">
   <title>Календарь записи</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
   <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.15/index.global.min.js"></script>
   <style>
     body {
@@ -13,6 +14,44 @@
       max-width: 900px;
       margin: 0 auto;
     }
+    body > button:last-child {
+      background: #f0f0f0;
+      border: 1px solid #ccc;
+    }
+    @media (max-width: 768px) {
+      body {
+        margin: 5px;
+      }
+      #calendar {
+        max-width: 100%;
+      }
+      body > button {
+        font-size: 16px !important;
+        padding: 12px !important;
+        display: block !important;
+        width: 100% !important;
+        margin-bottom: 8px !important;
+      }
+      #servicesModal,
+      #editModal,
+      #workingHoursModal {
+        width: 95%;
+        max-height: 90vh;
+        overflow-y: auto;
+        box-sizing: border-box;
+      }
+      input {
+        font-size: 16px;
+        padding: 10px;
+        width: 100%;
+        box-sizing: border-box;
+        margin-bottom: 8px;
+      }
+      h1 {
+        font-size: 20px;
+        text-align: center;
+      }
+    }
   </style>
 </head>
 <body>
@@ -20,6 +59,7 @@
   <button onclick="openServices()">Услуги</button>
   <button onclick="openWorkingHours()">Рабочее время</button>
   <button onclick="exportCsv()">Скачать таблицу записей</button>
+  <button onclick="location.href='/logout'">Выйти</button>
   <div id="calendar"></div>
 
   <div id="servicesModal" style="display:none; position:fixed; top:50%; left:50%; transform:translate(-50%,-50%); background:white; padding:20px; border:1px solid gray; z-index:1000;">
@@ -91,6 +131,7 @@
         return response.json();
       }).then(function (data) {
         if (data.success) {
+          alert('Запись создана с ' + data.start_time + ' до ' + data.end_time);
           calendar.refetchEvents();
           calendar.unselect();
         } else {
@@ -291,7 +332,7 @@
       if (newStart === null) return;
       var newEnd = prompt('Конец (ЧЧ:ММ):', currentEnd);
       if (newEnd === null) return;
-      var isWorking = confirm('Сделать день рабочим? Нажмите Да — рабочий, Нет — выходной.');
+      var isWorking = confirm('Сделать день рабочим? Нажмите Ок — рабочий, Отменить — выходной.');
       fetch('/api/working-hours/' + dayOfWeek, {
         method: 'PUT',
         headers: {'Content-Type': 'application/json'},
