@@ -28,7 +28,7 @@ async def _get_appointments_or_show_empty(callback, empty_message):
     if not appointments:
         await callback.message.edit_text(
             empty_message,
-            reply_markup=get_back_button(),
+            reply_markup=get_back_button()
         )
         await callback.answer()
         return
@@ -57,7 +57,7 @@ async def my_appointments(callback):
 
     await callback.message.edit_text(
         '\n'.join(lines),
-        reply_markup=get_back_button(),
+        reply_markup=get_back_button()
     )
     await callback.answer()
 
@@ -95,11 +95,10 @@ async def cancel_appointment_handler(callback):
     )
 
     if success:
-        if success:
-            await callback.message.edit_text(
-                'Запись отменена. Хотите записаться заново?',
-                reply_markup=get_after_cancel_keyboard()
-            )
+        await callback.message.edit_text(
+            'Запись отменена. Хотите записаться заново?',
+            reply_markup=get_after_cancel_keyboard()
+        )
     else:
         await callback.message.edit_text(
             'Не удалось отменить запись. Возможно, она уже отменена.',

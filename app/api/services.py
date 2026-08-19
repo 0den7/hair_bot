@@ -5,11 +5,11 @@ API для управления услугами.
 from fastapi import APIRouter, Body
 
 from app.services.booking import (
-    get_all_services,
     create_service,
-    update_service,
+    delete_service,
+    get_all_services,
     toggle_service_active,
-    delete_service
+    update_service
 )
 
 router = APIRouter(prefix='/api/services', tags=['services'])
@@ -96,7 +96,7 @@ async def remove_service(service_id: int):
     if not success:
         return {
             'success': False,
-            'message': 'Услуга не найдена или на нее есть записи',
+            'message': 'Услуга не найдена или на нее есть записи'
         }
 
     return {'success': True}

@@ -7,8 +7,8 @@
 """
 
 import asyncio
-from datetime import time
 
+from app.core import constants
 from app.database import async_session
 from app.models import Service, WorkingHours
 
@@ -16,27 +16,8 @@ from app.models import Service, WorkingHours
 async def seed_services():
     """Добавляет базовые услуги в БД."""
     services = [
-        Service(
-            name='Стрижка',
-            duration=60,
-            price=1500,
-            description='Женская стрижка любой сложности'
-        ),
-        Service(
-            name='Окрашивание',
-            duration=100,
-            price=3500,
-            description='Окрашивание волос (краска включена в стоимость)'
-        ),
-        Service(
-            name='Стрижка и окрашивание',
-            duration=160,
-            price=4500,
-            description=(
-                'Комплекс: стрижка и окрашивание волос '
-                '(краска включена в стоимость)'
-            )
-        )
+        Service(**service_data)
+        for service_data in constants.DEFAULT_SERVICES
     ]
 
     async with async_session() as session:
@@ -51,17 +32,17 @@ async def seed_working_hours():
     """Настраивает в БД рабочее время: ПН-ПТ 10:00-20:00, СБ-ВС - выходные."""
     working_hours = []
 
-    for day in range(5):
+    for day in range(constants.WORK_DAYS_COUNT):
         working_hours.append(
             WorkingHours(
                 day_of_week=day,
-                start_time=time(10),
-                end_time=time(20),
+                start_time=constants.DEFAULT_WORK_START,
+                end_time=constants.DEFAULT_WORK_END,
                 is_working=True
             )
         )
 
-    for day in range(5, 7):
+    for day in range(constants.WEEKEND_START_DAY, constants.WEEKEND_END_DAY):
         working_hours.append(
             WorkingHours(
                 day_of_week=day,

@@ -6,6 +6,7 @@ from datetime import time
 
 from fastapi import APIRouter, Body
 
+from app.core import constants
 from app.services.booking import (
     get_working_hours,
     update_working_hours
@@ -18,12 +19,11 @@ router = APIRouter(prefix='/api/working-hours', tags=['working-hours'])
 async def get_hours():
     """Возвращает настройки рабочего времени на все дни недели."""
     working_hours = await get_working_hours()
-    days = ['ПН', 'ВТ', 'СР', 'ЧТ', 'ПТ', 'СБ', 'ВС']
 
     return [
         {
             'day_of_week': wh.day_of_week,
-            'label': days[wh.day_of_week],
+            'label': constants.DAYS_OF_WEEK_LABELS[wh.day_of_week],
             'start_time': wh.start_time.strftime('%H:%M'),
             'end_time': wh.end_time.strftime('%H:%M'),
             'is_working': wh.is_working

@@ -7,6 +7,7 @@ from aiogram.filters import Command
 from sqlalchemy import select
 
 from app.bot.keyboards.keyboard import get_main_menu
+from app.core import constants
 from app.database import async_session
 from app.models import Client
 
@@ -22,7 +23,7 @@ async def cmd_start(message):
     """
     telegram_id = message.from_user.id
     username = message.from_user.username
-    first_name = message.from_user.first_name or 'Клиент'
+    first_name = message.from_user.first_name or constants.DEFAULT_CLIENT_NAME
     last_name = message.from_user.last_name
 
     async with async_session() as session:

@@ -8,6 +8,7 @@ from alembic import context
 from dotenv import load_dotenv
 from sqlalchemy import engine_from_config, pool
 
+from app.core import constants
 from app.database import Base
 from app.models import (  # noqa: F401
     Appointment,
@@ -29,12 +30,15 @@ target_metadata = Base.metadata
 
 def run_migrations_offline() -> None:
     """Запуск миграций в офлайн-режиме."""
-    url = os.getenv("DATABASE_URL", "").replace("+asyncpg", "")
+    url = os.getenv(constants.ENV_DATABASE_URL, '').replace(
+        constants.ASYNC_DRIVER_SUFFIX,
+        ''
+    )
     context.configure(
         url=url,
         target_metadata=target_metadata,
         literal_binds=True,
-        dialect_opts={"paramstyle": "named"},
+        dialect_opts={'paramstyle': 'named'},
     )
 
     with context.begin_transaction():
@@ -44,12 +48,16 @@ def run_migrations_offline() -> None:
 def run_migrations_online() -> None:
     """Запуск миграций в онлайн-режиме."""
     configuration = config.get_section(config.config_ini_section, {})
-    configuration["sqlalchemy.url"] = os.getenv("DATABASE_URL", "").replace(
-        "+asyncpg", ""
+    configuration['sqlalchemy.url'] = os.getenv(
+        constants.ENV_DATABASE_URL,
+        ''
+    ).replace(
+        constants.ASYNC_DRIVER_SUFFIX,
+        ''
     )
     connectable = engine_from_config(
         configuration,
-        prefix="sqlalchemy.",
+        prefix='sqlalchemy.',
         poolclass=pool.NullPool,
     )
 

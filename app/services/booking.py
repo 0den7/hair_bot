@@ -9,6 +9,7 @@ from datetime import date, datetime, timedelta
 from sqlalchemy import select
 from sqlalchemy.orm import joinedload
 
+from app.core import constants
 from app.database import async_session
 from app.models import Client, Service, Appointment, WorkingHours, BlockedTime
 
@@ -40,7 +41,7 @@ async def get_available_dates():
     dates = []
     today = date.today()
 
-    for i in range(14):
+    for i in range(constants.DAYS_FOR_BOOKING):
         check_date = today + timedelta(days=i)
         if check_date.weekday() in working_days:
             dates.append({
@@ -102,7 +103,7 @@ async def get_available_slots(day, service_id):
         appointments_request = await session.execute(
             select(Appointment).where(
                 Appointment.date == day,
-                Appointment.status != 'отменена'
+                Appointment.status != constants.STATUS_CANCELLED
             )
         )
         appointments = appointments_request.scalars().all()
@@ -126,7 +127,7 @@ async def get_available_slots(day, service_id):
             ):
                 available.append(slot_start)
 
-            current += timedelta(minutes=30)
+            current += timedelta(minutes=constants.SLOT_STEP_MINUTES)
 
         return available
 
@@ -148,7 +149,7 @@ async def create_appointment(telegram_id, service_id, day, start_time):
         if not client:
             client = Client(
                 telegram_id=telegram_id,
-                first_name='Клиент'
+                first_name=constants.DEFAULT_CLIENT_NAME
             )
             session.add(client)
             await session.flush()
@@ -167,7 +168,7 @@ async def create_appointment(telegram_id, service_id, day, start_time):
         busy_request = await session.execute(
             select(Appointment).where(
                 Appointment.date == day,
-                Appointment.status != 'отменена'
+                Appointment.status != constants.STATUS_CANCELLED
             )
         )
         busy_appointments = busy_request.scalars().all()
@@ -188,7 +189,7 @@ async def create_appointment(telegram_id, service_id, day, start_time):
             date=day,
             start_time=start_time,
             end_time=end_time,
-            status='в ожидании'
+            status=constants.STATUS_PENDING
         )
 
         session.add(appointment)
@@ -216,7 +217,7 @@ async def get_client_appointments(telegram_id):
         result = await session.execute(
             select(Appointment).options(joinedload(Appointment.service)).where(
                 Appointment.client_id == client.id,
-                Appointment.status != 'отменена'
+                Appointment.status != constants.STATUS_CANCELLED
             ).order_by(Appointment.date, Appointment.start_time)
         )
 
@@ -236,7 +237,7 @@ async def cancel_appointment(appointment_id, telegram_id=None):
     async with async_session() as session:
         conditions = [
             Appointment.id == appointment_id,
-            Appointment.status != 'отменена'
+            Appointment.status != constants.STATUS_CANCELLED
         ]
 
         if telegram_id:
@@ -255,7 +256,7 @@ async def cancel_appointment(appointment_id, telegram_id=None):
         if not appointment:
             return False
 
-        appointment.status = 'отменена'
+        appointment.status = constants.STATUS_CANCELLED
         await session.commit()
 
         return True
@@ -274,7 +275,7 @@ async def get_appointments_for_period(start_date, end_date):
             ).where(
                 Appointment.date >= start_date,
                 Appointment.date <= end_date,
-                Appointment.status != 'отменена'
+                Appointment.status != constants.STATUS_CANCELLED
             ).order_by(Appointment.date, Appointment.start_time)
         )
 
@@ -294,7 +295,7 @@ async def update_appointment(appointment_id, new_date, new_start_time):
                 joinedload(Appointment.service)
             ).where(
                 Appointment.id == appointment_id,
-                Appointment.status != 'отменена'
+                Appointment.status != constants.STATUS_CANCELLED
             )
         )
         appointment = appointment_request.unique().scalars().first()
@@ -310,7 +311,7 @@ async def update_appointment(appointment_id, new_date, new_start_time):
         busy_request = await session.execute(
             select(Appointment).where(
                 Appointment.date == new_date,
-                Appointment.status != 'отменена',
+                Appointment.status != constants.STATUS_CANCELLED,
                 Appointment.id != appointment_id
             )
         )
@@ -363,7 +364,7 @@ async def create_blocked_time(day, start_time, end_time, reason=None):
         appointments_request = await session.execute(
             select(Appointment).where(
                 Appointment.date == day,
-                Appointment.status != 'отменена'
+                Appointment.status != constants.STATUS_CANCELLED
             )
         )
         appointments = appointments_request.scalars().all()
@@ -454,7 +455,7 @@ async def create_appointment_by_master(
         busy_request = await session.execute(
             select(Appointment).where(
                 Appointment.date == day,
-                Appointment.status != 'отменена'
+                Appointment.status != constants.STATUS_CANCELLED
             )
         )
         busy_appointments = busy_request.scalars().all()
@@ -475,7 +476,7 @@ async def create_appointment_by_master(
             date=day,
             start_time=start_time,
             end_time=end_time,
-            status='в ожидании'
+            status=constants.STATUS_PENDING
         )
         session.add(appointment)
         await session.commit()
@@ -643,7 +644,7 @@ async def get_appointments_for_today():
                 joinedload(Appointment.service)
             ).where(
                 Appointment.date == today,
-                Appointment.status != 'отменена'
+                Appointment.status != constants.STATUS_CANCELLED
             )
         )
         return result.unique().scalars().all()

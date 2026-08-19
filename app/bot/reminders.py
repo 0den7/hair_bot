@@ -8,6 +8,7 @@ from datetime import datetime, time
 from aiogram import Bot
 
 from app.bot.config import BOT_TOKEN
+from app.core import constants
 from app.services.booking import get_appointments_for_today
 
 
@@ -20,10 +21,16 @@ async def send_reminders():
         now = datetime.now()
         current_time = now.time()
 
-        if current_time < time(0, 1):
+        if current_time < time(
+            constants.REMINDER_RESET_HOUR,
+            constants.REMINDER_RESET_MINUTE
+        ):
             sent_today = False
 
-        if current_time >= time(8, 0) and not sent_today:
+        if current_time >= time(
+            constants.REMINDER_HOUR,
+            constants.REMINDER_MINUTE
+        ) and not sent_today:
             appointments = await get_appointments_for_today()
 
             for app in appointments:
@@ -44,4 +51,4 @@ async def send_reminders():
 
             sent_today = True
 
-        await asyncio.sleep(60)
+        await asyncio.sleep(constants.REMINDER_CHECK_INTERVAL_SECONDS)

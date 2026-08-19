@@ -11,9 +11,14 @@ from fastapi import APIRouter, Form, HTTPException, Request
 from fastapi.responses import HTMLResponse, RedirectResponse
 from fastapi.templating import Jinja2Templates
 
+from app.core import constants
+
 load_dotenv()
 
-CALENDAR_PASSWORD = os.getenv('CALENDAR_PASSWORD', 'admin')
+CALENDAR_PASSWORD = os.getenv(
+    'CALENDAR_PASSWORD',
+    constants.DEFAULT_CALENDAR_PASSWORD
+)
 
 router = APIRouter()
 
@@ -22,7 +27,7 @@ templates = Jinja2Templates(directory='app/templates')
 
 def is_authorized(request: Request):
     """Проверяет, авторизован ли мастер."""
-    return request.cookies.get('master_auth') == CALENDAR_PASSWORD
+    return request.cookies.get(constants.AUTH_COOKIE_NAME) == CALENDAR_PASSWORD
 
 
 @router.get('/login', response_class=HTMLResponse)
@@ -37,7 +42,7 @@ async def login(password: str = Form(...)):
     if password != CALENDAR_PASSWORD:
         raise HTTPException(status_code=403, detail='Неверный пароль')
     response = RedirectResponse('/', status_code=303)
-    response.set_cookie('master_auth', password)
+    response.set_cookie(constants.AUTH_COOKIE_NAME, password)
     return response
 
 
@@ -45,5 +50,5 @@ async def login(password: str = Form(...)):
 async def logout():
     """Выход (очистка куки)."""
     response = RedirectResponse('/login', status_code=303)
-    response.delete_cookie('master_auth')
+    response.delete_cookie(constants.AUTH_COOKIE_NAME)
     return response

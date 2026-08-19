@@ -9,6 +9,7 @@ from io import StringIO
 from fastapi import APIRouter, Query, Body
 from fastapi.responses import StreamingResponse
 
+from app.core import constants
 from app.services.booking import (
     get_appointments_for_period,
     update_appointment,
@@ -121,8 +122,8 @@ async def get_blocked_times(
 
     return [
         {
-            'id': f'blocked_{bt.id}',
-            'title': 'Занято',
+            'id': f'{constants.BLOCKED_ID_PREFIX}{bt.id}',
+            'title': constants.BLOCKED_TITLE,
             'start': (
                 f'{bt.date.isoformat()}'
                 f'T{bt.start_time.strftime("%H:%M")}'
@@ -131,7 +132,7 @@ async def get_blocked_times(
                 f'{bt.date.isoformat()}'
                 f'T{bt.end_time.strftime("%H:%M")}'
             ),
-            'color': 'gray'
+            'color': constants.BLOCKED_COLOR
         }
         for bt in blocked_times
     ]
@@ -187,9 +188,9 @@ async def export_appointments(
     appointments = await get_appointments_for_period(start, end)
 
     output = StringIO()
-    output.write('\ufeff')
-    writer = csv.writer(output, delimiter=';')
-    writer.writerow(['Дата', 'Время', 'Клиент', 'Услуга', 'Цена', 'Статус'])
+    output.write(constants.CSV_BOM)
+    writer = csv.writer(output, delimiter=constants.CSV_DELIMITER)
+    writer.writerow(constants.CSV_COLUMNS)
 
     for app in appointments:
         writer.writerow([

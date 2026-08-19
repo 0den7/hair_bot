@@ -5,8 +5,6 @@
 время.
 """
 
-from datetime import time
-
 from sqlalchemy import (
     BigInteger,
     Boolean,
@@ -20,6 +18,7 @@ from sqlalchemy import (
 )
 from sqlalchemy.orm import relationship
 
+from app.core import constants
 from app.database import Base
 
 
@@ -34,10 +33,10 @@ class Client(Base):
 
     id = Column(Integer, primary_key=True, index=True)
     telegram_id = Column(BigInteger, unique=True, nullable=True)
-    username = Column(String(255), nullable=True)
-    first_name = Column(String(255), nullable=False)
-    last_name = Column(String(255), nullable=True)
-    phone = Column(String(20), nullable=True)
+    username = Column(String(constants.MAX_LENGTH_NAME), nullable=True)
+    first_name = Column(String(constants.MAX_LENGTH_NAME), nullable=False)
+    last_name = Column(String(constants.MAX_LENGTH_NAME), nullable=True)
+    phone = Column(String(constants.MAX_LENGTH_PHONE), nullable=True)
 
     appointments = relationship('Appointment', back_populates='client')
 
@@ -57,7 +56,11 @@ class Service(Base):
     __tablename__ = 'services'
 
     id = Column(Integer, primary_key=True, index=True)
-    name = Column(String(255), unique=True, nullable=False)
+    name = Column(
+        String(constants.MAX_LENGTH_NAME),
+        unique=True,
+        nullable=False
+    )
     duration = Column(Integer, nullable=False)
     price = Column(Integer, nullable=False)
     description = Column(Text, nullable=True)
@@ -82,7 +85,11 @@ class Appointment(Base):
     date = Column(Date, nullable=False)
     start_time = Column(Time, nullable=False)
     end_time = Column(Time, nullable=False)
-    status = Column(String(20), nullable=False, default='в ожидании')
+    status = Column(
+        String(constants.MAX_LENGTH_STATUS),
+        nullable=False,
+        default=constants.STATUS_PENDING
+    )
     notes = Column(Text, nullable=True)
 
     client = relationship('Client', back_populates='appointments')
@@ -106,14 +113,18 @@ class WorkingHours(Base):
 
     id = Column(Integer, primary_key=True, index=True)
     day_of_week = Column(Integer, unique=True, nullable=False)
-    start_time = Column(Time, nullable=False, default=time(10))
-    end_time = Column(Time, nullable=False, default=time(20))
+    start_time = Column(
+        Time,
+        nullable=False,
+        default=constants.DEFAULT_WORK_START
+    )
+    end_time = Column(Time, nullable=False, default=constants.DEFAULT_WORK_END)
     is_working = Column(Boolean, default=True)
 
     def __repr__(self):
-        days = ['ПН', 'ВТ', 'СР', 'ЧТ', 'ПТ', 'СБ', 'ВС']
         return (
-            f'<Рабочее время {days[self.day_of_week]} '
+            f'<Рабочее время '
+            f'{constants.DAYS_OF_WEEK_LABELS[self.day_of_week]} '
             f'{self.start_time}-{self.end_time}>'
         )
 
@@ -131,7 +142,7 @@ class BlockedTime(Base):
     date = Column(Date, nullable=False)
     start_time = Column(Time, nullable=False)
     end_time = Column(Time, nullable=False)
-    reason = Column(String(255), nullable=True)
+    reason = Column(String(constants.MAX_LENGTH_NAME), nullable=True)
 
     def __repr__(self):
         return (
