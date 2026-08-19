@@ -141,3 +141,23 @@ def get_appointments_keyboard(appointments):
         )
     ])
     return InlineKeyboardMarkup(inline_keyboard=buttons)
+
+
+def get_after_cancel_keyboard():
+    """Клавиатура после отмены записи."""
+    return InlineKeyboardMarkup(
+        inline_keyboard=[
+            [
+                InlineKeyboardButton(
+                    text='📅 Записаться заново',
+                    callback_data='book'
+                )
+            ],
+            [
+                InlineKeyboardButton(
+                    text='В меню',
+                    callback_data='back_to_menu'
+                )
+            ]
+        ]
+    )

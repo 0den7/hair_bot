@@ -7,7 +7,8 @@ from aiogram import Router, F
 from app.bot.keyboards.keyboard import (
     get_appointments_keyboard,
     get_back_button,
-    get_main_menu
+    get_main_menu,
+    get_after_cancel_keyboard
 )
 from app.services.booking import (
     cancel_appointment,
@@ -94,10 +95,11 @@ async def cancel_appointment_handler(callback):
     )
 
     if success:
-        await callback.message.edit_text(
-            'Запись отменена.',
-            reply_markup=get_main_menu()
-        )
+        if success:
+            await callback.message.edit_text(
+                'Запись отменена. Хотите записаться заново?',
+                reply_markup=get_after_cancel_keyboard()
+            )
     else:
         await callback.message.edit_text(
             'Не удалось отменить запись. Возможно, она уже отменена.',
