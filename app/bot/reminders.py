@@ -3,6 +3,7 @@
 """
 
 import asyncio
+import logging
 from datetime import datetime, time
 
 from aiogram import Bot
@@ -10,6 +11,9 @@ from aiogram import Bot
 from app.bot.config import BOT_TOKEN
 from app.core import constants
 from app.services.booking import get_appointments_for_today
+
+
+logger = logging.getLogger(__name__)
 
 
 async def send_reminders():
@@ -46,8 +50,8 @@ async def send_reminders():
                                 f'Ждём вас!'
                             )
                         )
-                    except Exception:
-                        pass
+                    except Exception as e:
+                        logger.error(f'Ошибка отправки напоминания: {e}')
 
             sent_today = True
 
