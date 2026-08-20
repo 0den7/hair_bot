@@ -25,11 +25,13 @@ templates = Jinja2Templates(directory='app/templates')
 
 @app.middleware('http')
 async def check_auth(request: Request, call_next):
-    """Защищает /api/ от неавторизованного доступа."""
+    """Защищает все эндпоинты, кроме публичных."""
     if (
-        request.url.path.startswith(constants.API_PREFIX) and
+        request.url.path not in constants.PUBLIC_PATHS and
         not is_authorized(request)
     ):
+        if request.url.path == '/':
+            return RedirectResponse('/login', status_code=303)
         return JSONResponse(
             status_code=401,
             content={'detail': 'Требуется авторизация'}
@@ -39,9 +41,7 @@ async def check_auth(request: Request, call_next):
 
 @app.get('/', response_class=HTMLResponse)
 async def index(request: Request):
-    """Главная страница с календарем (только для авторизованных)."""
-    if not is_authorized(request):
-        return RedirectResponse('/login', status_code=303)
+    """Главная страница с календарем."""
     return templates.TemplateResponse(request, 'calendar.html')
 
 

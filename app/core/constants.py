@@ -78,9 +78,11 @@ AUTH_COOKIE_NAME = 'master_auth'
 
 # Веб-приложение
 APP_TITLE = 'Календарь записей'
-API_PREFIX = '/api/'
 HEALTH_OK = 'ok'
 
 # Alembic
 ASYNC_DRIVER_SUFFIX = '+asyncpg'
 ENV_DATABASE_URL = 'DATABASE_URL'
+
+# Публичные эндпоинты
+PUBLIC_PATHS = ('/login', '/health')
