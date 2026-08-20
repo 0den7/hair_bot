@@ -222,4 +222,5 @@ http://127.0.0.1:8000/docs
 ## Автор
 
 **Юрий Кудряшов**
+
 GitHub: [0den7](https://github.com/0den7)
