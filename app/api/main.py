@@ -45,7 +45,7 @@ async def index(request: Request):
     return templates.TemplateResponse(request, 'calendar.html')
 
 
-@app.get('/health')
+@app.api_route('/health', methods=['GET', 'HEAD'])
 async def health():
     """Проверка работоспособности."""
     return {'status': constants.HEALTH_OK}
