@@ -1,7 +1,8 @@
 """
 Точка входа Telegram бота.
 
-Создаёт бота, диспетчер, подключает роутеры и запускает polling.
+Создает бота, диспетчер, подключает роутеры, запускает polling,
+логирует ошибки и уведомляет админа.
 """
 
 import asyncio
@@ -11,10 +12,9 @@ from aiogram import Bot, Dispatcher
 from aiogram.exceptions import TelegramAPIError
 from aiogram.fsm.storage.memory import MemoryStorage
 
-from app.bot.config import BOT_TOKEN
-from app.bot.handlers import start, booking, appointments
+from app.bot.config import ADMIN_TELEGRAM_ID, BOT_TOKEN
+from app.bot.handlers import appointments, booking, start
 from app.bot.reminders import send_reminders
-
 
 logging.basicConfig(
     filename='logs/bot.log',
@@ -35,17 +35,27 @@ async def main():
 
     @dp.error()
     async def error_handler(event, exception):
-        """Логирует неожиданные ошибки."""
+        """Логирует ошибки и уведомляет админа."""
         if isinstance(exception, TelegramAPIError):
-            logger.error(
+            message = (
                 f'Ошибка Telegram API '
                 f'{type(event).__name__}: {exception}'
             )
         else:
-            logger.error(
+            message = (
                 f'Неожиданная ошибка '
                 f'{type(event).__name__}: {exception}'
             )
+
+        logger.error(message)
+
+        try:
+            await bot.send_message(
+                chat_id=ADMIN_TELEGRAM_ID,
+                text=message
+            )
+        except Exception:
+            logger.exception('Не удалось отправить уведомление админу')
 
     asyncio.create_task(send_reminders())
 
