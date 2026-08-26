@@ -1,0 +1,33 @@
+services:
+  db:
+    image: postgres:16-alpine
+    restart: always
+    env_file:
+      - .env
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+  api:
+    build:
+      context: .
+      dockerfile: app/api/Dockerfile
+    restart: always
+    depends_on:
+      - db
+    env_file:
+      - .env
+    ports:
+      - "8000:8000"
+
+  bot:
+    build:
+      context: .
+      dockerfile: app/bot/Dockerfile
+    restart: always
+    depends_on:
+      - db
+    env_file:
+      - .env
+
+volumes:
+  postgres_data:
