@@ -28,6 +28,8 @@ services:
       - db
     env_file:
       - .env
+    volumes:
+      - ./logs:/app/logs
 
 volumes:
   postgres_data:

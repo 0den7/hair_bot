@@ -17,7 +17,7 @@ from app.bot.reminders import send_reminders
 
 
 logging.basicConfig(
-    filename='bot.log',
+    filename='logs/bot.log',
     level=logging.INFO,
     format='%(asctime)s %(levelname)s %(message)s'
 )
