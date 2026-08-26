@@ -1,6 +1,7 @@
 """Константы проекта."""
 
 from datetime import time
+from zoneinfo import ZoneInfo
 
 # Статусы записей
 STATUS_PENDING = 'в ожидании'
@@ -86,3 +87,6 @@ ENV_DATABASE_URL = 'DATABASE_URL'
 
 # Публичные эндпоинты
 PUBLIC_PATHS = ('/login', '/health')
+
+# Часовой пояс для корректной работы дат
+TIMEZONE = ZoneInfo('Europe/Moscow')

@@ -4,7 +4,7 @@
 Предоставляет функции для бота и веб-календаря.
 """
 
-from datetime import date, datetime, timedelta
+from datetime import datetime, timedelta
 
 from sqlalchemy import select
 from sqlalchemy.orm import joinedload
@@ -39,7 +39,7 @@ async def get_available_dates():
         working_days = {wh.day_of_week for wh in result.scalars().all()}
 
     dates = []
-    today = date.today()
+    today = datetime.now(constants.TIMEZONE).date()
 
     for i in range(constants.DAYS_FOR_BOOKING):
         check_date = today + timedelta(days=i)
@@ -635,7 +635,7 @@ async def get_appointments_for_today():
 
     Используется для отправки напоминаний.
     """
-    today = date.today()
+    today = datetime.now(constants.TIMEZONE).date()
 
     async with async_session() as session:
         result = await session.execute(

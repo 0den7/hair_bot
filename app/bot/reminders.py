@@ -22,7 +22,7 @@ async def send_reminders():
     sent_today = False
 
     while True:
-        now = datetime.now()
+        now = datetime.now(constants.TIMEZONE)
         current_time = now.time()
 
         if current_time < time(
