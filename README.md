@@ -46,11 +46,13 @@
 
 - SQLAlchemy 2.0+
 
-- Uvicorn
-
 - Alembic
 
 - PostgreSQL
+
+- Docker, docker compose
+
+- Uvicorn, Nginx
 
 - FullCalendar.js
 
@@ -166,7 +168,37 @@ uvicorn app.api.main:app --reload --port 8000
 Веб-календарь будет доступен по адресу `http://127.0.0.1:8000/`.
 При первом входе откроется страница авторизации.
 
+## Как запустить через Docker
+
+Создать файл `.env` в корне проекта (см. `.env.example`).
+
+Выполнить из корня проекта:
+
+```bash
+docker compose up -d --build
+```
+
+Применить миграции и заполнить базу начальными данными:
+
+```bash
+docker compose exec api alembic upgrade head
+```
+
+```bash
+docker compose exec api python -m app.seed
+```
+
+Веб-календарь будет доступен по адресу `http://localhost:8000/`.
+
+## Деплой
+
+Проект развёрнут на удалённом сервере и доступен по адресу `https://hairbot.duckdns.org`.
+
+CI/CD настроен через GitHub Actions: при пуше в ветку `main` код автоматически доставляется на сервер, контейнеры пересобираются, применяются миграции.
+
 ## Резервное копирование базы данных
+
+### Локально
 
 Создание дампа:
 
@@ -182,13 +214,26 @@ python backup.py
 psql -U postgres -d hairsalon -f backups/backup_YYYY-MM-DD_HH-MM-SS.sql
 ```
 
+### На сервере
+
+Создание дампа:
+
+```bash
+docker compose exec db pg_dump -U postgres -d hairsalon > backups/backup.sql
+```
+
+Восстановление:
+
+```bash
+docker compose exec -T db psql -U postgres -d hairsalon < backups/backup.sql
+```
+
 ## Документация API
 
-Документация доступна после входа в календарь по адресу:
+Документация доступна после входа в календарь.
 
-```text
-http://127.0.0.1:8000/docs
-```
+Локально: `http://127.0.0.1:8000/docs`
+На сервере: `https://hairbot.duckdns.org/docs`
 
 ## Эндпоинты API
 
