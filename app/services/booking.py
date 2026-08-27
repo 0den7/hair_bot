@@ -115,8 +115,20 @@ async def get_available_slots(day, service_id):
 
         available = []
 
-        current = datetime.combine(day, working_hours.start_time)
+        start_dt = datetime.combine(day, working_hours.start_time)
         end = datetime.combine(day, working_hours.end_time)
+        now = datetime.now(constants.TIMEZONE)
+
+        if day == now.date():
+            minutes = now.minute
+            if minutes % constants.SLOT_STEP_MINUTES != 0:
+                now += timedelta(
+                    minutes=constants.SLOT_STEP_MINUTES -
+                    (minutes % constants.SLOT_STEP_MINUTES)
+                )
+            current = max(start_dt, now)
+        else:
+            current = start_dt
 
         while current + timedelta(minutes=duration) <= end:
             slot_start = current.time()
