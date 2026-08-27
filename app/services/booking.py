@@ -124,8 +124,12 @@ async def get_available_slots(day, service_id):
 
         available = []
 
-        start_dt = datetime.combine(day, working_hours.start_time)
-        end = datetime.combine(day, working_hours.end_time)
+        start_dt = datetime.combine(
+            day, working_hours.start_time, tzinfo=constants.TIMEZONE
+        )
+        end = datetime.combine(
+            day, working_hours.end_time, tzinfo=constants.TIMEZONE
+        )
         now = datetime.now(constants.TIMEZONE)
 
         if day == now.date():
