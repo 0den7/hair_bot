@@ -29,25 +29,34 @@ async def get_active_services():
 
 async def get_available_dates():
     """
-    Берёт ближайшие 14 дней, исключая выходные и возвращает список словарей с
-    доступными датами.
+    Берет ближайшие 14 дней, исключая выходные и дни, которые уже
+    закончились. Возвращает список словарей с доступными датами.
     """
     async with async_session() as session:
         result = await session.execute(
             select(WorkingHours).where(WorkingHours.is_working)
         )
-        working_days = {wh.day_of_week for wh in result.scalars().all()}
+        working_hours_by_day = {
+            wh.day_of_week: wh for wh in result.scalars().all()
+        }
 
     dates = []
-    today = datetime.now(constants.TIMEZONE).date()
+    now = datetime.now(constants.TIMEZONE)
+    today = now.date()
 
     for i in range(constants.DAYS_FOR_BOOKING):
         check_date = today + timedelta(days=i)
-        if check_date.weekday() in working_days:
-            dates.append({
-                'label': check_date.strftime('%d.%m'),
-                'value': check_date.isoformat()
-            })
+        wh = working_hours_by_day.get(check_date.weekday())
+        if not wh:
+            continue
+
+        if check_date == today and now.time() >= wh.end_time:
+            continue
+
+        dates.append({
+            'label': check_date.strftime('%d.%m'),
+            'value': check_date.isoformat()
+        })
 
     return dates
 
