@@ -203,11 +203,10 @@ http://127.0.0.1:8000/
 
 ## Деплой
 
-Проект развёрнут на удалённом сервере и доступен по адресу:
+Проект развёрнут на удалённом сервере.
 
-```text
-https://hairbot.duckdns.org
-```
+- Веб-календарь: [https://hairbot.duckdns.org](https://hairbot.duckdns.org)
+- Telegram-бот: [@NataliaHair_bot](https://t.me/NataliaHair_bot)
 
 CI/CD настроен через GitHub Actions: при пуше в ветку `main` код автоматически доставляется на сервер, контейнеры пересобираются, применяются миграции.
 
